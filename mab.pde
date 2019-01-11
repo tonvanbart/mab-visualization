@@ -5,7 +5,7 @@
 */  
 
 // Setup the Processing Canvas
-color grey = color(128, 128, 128);
+color grey = color(0, 0, 255);
 color red = color(255, 0, 0);
 
 void setup(){
@@ -18,15 +18,17 @@ void setup(){
 void draw(){
     background(255);
     stroke(0,0,0);
-    // println("pulls="+pulls);
-    // println(pulls1/pulls * 255);
-    fill(lerpColor(grey,red, pulls1/pulls ));
+
+    // draw bandit 1
+    fill( lerpColor(grey, red, fraction1));
     rect(0, 0, 200, 300 + box1h/1, 5);
-    // println(pulls2/pulls * 255);
-    fill(lerpColor(grey,red,pulls2/pulls));
+
+    // draw bandit2 
+    fill( lerpColor( grey, red, fraction2));
     rect(300, 0, 200, 300 + box2h/1, 5);
-    // println(pulls3/pulls * 255);
-    fill(lerpColor(grey,red,pulls3/pulls));
+
+    // draw bandit3
+    fill(lerpColor(grey, red, fraction3));
     rect(600, 0, 200, 300 + box3h/1, 5);
 }
 

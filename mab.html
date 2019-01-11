@@ -149,6 +149,12 @@
         var running = 0;
         // timeout var for experiment
         var exp_timeout;
+        // these averages are calculated differently and kept global
+        var averages = [0,0,0];
+        // keep track of the last 20 choices - pretend they were all '1' to start
+        var lastpulls = [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1];
+        // fractions of the last 20 pulls per bandit, used to set color in the sketch
+        var fraction1 = 0, fraction2 = 0, fraction3 = 0;
 
         // choose best bandit, i.e. highest average payout
         function best() {
@@ -156,6 +162,7 @@
             avg1 = (pulls1 > 0 ? pay1 / pulls1 : 0.0);
             avg2 = (pulls2 > 0 ? pay2 / pulls2 : 0.0);
             avg3 = (pulls3 > 0 ? pay3 / pulls3 : 0.0);
+
             // console.debug("pulls1=" + pulls1 + " pulls2=" + pulls2 + " pulls3=" + pulls3);
             // console.debug("pay1=" + pay1 + " pay2=" + pay2 + " pay3=" + pay3);
             console.debug("avg1=" + avg1 + " avg2=" + avg2 + " avg3=" + avg3);
@@ -166,6 +173,19 @@
                 // either 2 or 3 is greatest
                 return (avg2 > avg3 ? 2 : 3);
             }
+        }
+
+        // choose best bandit based on the averages array
+        function betterbest() {
+            var max = averages[0];
+            var bestbandit = 0;
+            for (i = 1; i<3; i++) {
+                if (averages[i] > max) {
+                    bestbandit = i;
+                    max = averages[i];
+                }
+            }
+            return bestbandit + 1;
         }
 
         // choose random bandit 1-3
@@ -187,9 +207,35 @@
                 chosen = randombox();
             } else {
                 // exploitation
-                chosen = best();
-                console.log("best is: " + chosen);
+                chosen = betterbest();
+                console.debug("best is: " + chosen);
             }
+            lastpulls.push(chosen);
+            if (lastpulls.length > 20) {
+                lastpulls.shift();
+            }
+            // occerrences of each pull.
+            var occurrences = [0,0,0];
+            lastpulls.forEach(
+                function(item) {
+                    occurrences[item - 1] += 1;
+                }
+            );
+            console.debug("occurrences[]=" + occurrences);
+
+            // now set the fraction of pulls for the last 20 tries, per bandit
+            // these are used by processing to set the color
+            fraction1 = occurrences[0] / 20;
+            fraction2 = occurrences[1] / 20;
+            fraction3 = occurrences[2] / 20;
+
+            // quick and dirty: update the averages array
+            // this is done in such a way that the number of pulls
+            // has no effect on the new average
+            var result = score(chosen);
+            var delta = result - averages[chosen - 1];
+            averages[chosen - 1] = averages[chosen - 1] + (delta / 10.0);
+            console.debug("averages[] = " + averages);
 
             switch(chosen) {
                 case 1:
@@ -207,6 +253,7 @@
             exp_timeout = setTimeout(experiment, 100);
         }
 
+        // start the experiment loop
         function start_experiment() {
             console.debug("start_experiment()");
             if (!running) {
@@ -216,11 +263,26 @@
             }
         }
 
+        // stop the experiment loop
         function stop_experiment() {
             console.debug("stop_experiment()");
             clearTimeout(exp_timeout);
             document.getElementById("status").innerText = "STOPPED";
             running = 0;
+        }
+
+        // return the payout of the given bandit
+        function score(chosen) {
+            switch(chosen) {
+                case 1: 
+                    return parseInt(box1h);
+                    break;
+                case 2: 
+                    return parseInt(box2h);
+                    break;
+                default: 
+                    return parseInt(box3h);
+            }
         }
 
         // experiment();
