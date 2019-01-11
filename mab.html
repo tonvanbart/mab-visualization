@@ -68,7 +68,17 @@
 </head>
 
 <body>
-    <h2>MAB visualize</h2>
+    <h2>multi-arm bandit visualization</h2>
+    <p style="width: 800px">
+    Visualization of epsilon greedy on a 3 armed multi armed bandit.
+    The sliders control the payout per bandit 0-100, bandit size adjusts accordingly.
+    Epsilon controls ratio of exploration vs exploitation 0-1.
+    Bandit color indicates fraction of times this bandit was chosen over the last 20 pulls.
+    <br>
+    Click "Run" to start the simulation, "Stop" to pause. Reload page to reset.
+    <br>
+    Source code on <a href="https://github.com/tonvanbart/mab-visualization">Github</a>.
+</p>
     <br />
     <!-- Bandit 1 payout: <span id="bandit1val"></span>&nbsp;
     Bandit 2 payout: <span id="bandit2val"></span>&nbsp;
