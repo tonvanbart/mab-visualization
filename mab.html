@@ -92,9 +92,13 @@
         Epsilon: <span id="epsilonval"></span>
         <input type="range" min="1" max="100" value="50" class="slider" id="epsilon">
     </div>
+    <button onclick="start_experiment()">RUN</button>
+    <button onclick="stop_experiment()">STOP</button>
+    <span id="status">NOT STARTED</span>
 
     <script src="processing.min.js"></script>
     <script>
+        // work with the sliders
         var bandit1slider = document.getElementById("bandit1");
         var bandit2slider = document.getElementById("bandit2");
         var bandit3slider = document.getElementById("bandit3");
@@ -141,6 +145,10 @@
         var color1 = 0, color2 = 0, color3 = 0;
         // total number of pulls
         var pulls = 1;
+        // indicate if experiment loop is running
+        var running = 0;
+        // timeout var for experiment
+        var exp_timeout;
 
         // choose best bandit, i.e. highest average payout
         function best() {
@@ -196,10 +204,26 @@
                     pulls3++;
                     pay3 += parseInt(box3h);
             }
-            setTimeout(experiment, 100);
+            exp_timeout = setTimeout(experiment, 100);
         }
-        
-        experiment();
+
+        function start_experiment() {
+            console.debug("start_experiment()");
+            if (!running) {
+                running = 1;
+                document.getElementById("status").innerText = "RUNNING";
+                experiment();
+            }
+        }
+
+        function stop_experiment() {
+            console.debug("stop_experiment()");
+            clearTimeout(exp_timeout);
+            document.getElementById("status").innerText = "STOPPED";
+            running = 0;
+        }
+
+        // experiment();
     
     </script>
 </body>
