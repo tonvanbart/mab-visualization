@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>MAB visualize</title>
+    <style type="text/css">
+        body {
+            font-family: sans-serif;
+        }
+
+        .slidecontainer {
+            width: 600px;
+            /* Width of the outside container */
+        }
+
+        /* The slider itself */
+        .slider {
+            -webkit-appearance: none;
+            /* Override default CSS styles */
+            appearance: none;
+            width: 100%;
+            /* Full-width */
+            height: 25px;
+            /* Specified height */
+            background: #d3d3d3;
+            /* Grey background */
+            outline: none;
+            /* Remove outline */
+            opacity: 0.7;
+            /* Set transparency (for mouse-over effects on hover) */
+            -webkit-transition: .2s;
+            /* 0.2 seconds transition on hover */
+            transition: opacity .2s;
+        }
+
+        /* Mouse-over effects */
+        .slider:hover {
+            opacity: 1;
+            /* Fully shown on mouse-over */
+        }
+
+        /* The slider handle (use -webkit- (Chrome, Opera, Safari, Edge) and -moz- (Firefox) to override default look) */
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            /* Override default look */
+            appearance: none;
+            width: 25px;
+            /* Set a specific slider handle width */
+            height: 25px;
+            /* Slider handle height */
+            background: #4CAF50;
+            /* Green background */
+            cursor: pointer;
+            /* Cursor on hover */
+        }
+
+        .slider::-moz-range-thumb {
+            width: 25px;
+            /* Set a specific slider handle width */
+            height: 25px;
+            /* Slider handle height */
+            background: #4CAF50;
+            /* Green background */
+            cursor: pointer;
+            /* Cursor on hover */
+        }
+    </style>
+</head>
+
+<body>
+    <h2>MAB visualize</h2>
+    <br />
+    <!-- Bandit 1 payout: <span id="bandit1val"></span>&nbsp;
+    Bandit 2 payout: <span id="bandit2val"></span>&nbsp;
+    Bandit 3 payout: <span id="bandit3val"></span> -->
+
+    <canvas data-processing-sources="mab.pde"></canvas>
+
+    <div class="slidecontainer">
+        Bandit 1 payout: <span id="bandit1val"></span>
+        <input type="range" min="1" max="100" value="50" class="slider" id="bandit1">
+    </div>
+    <div class="slidecontainer">
+        Bandit 2 payout: <span id="bandit2val"></span>
+        <input type="range" min="1" max="100" value="50" class="slider" id="bandit2">
+    </div>
+    <div class="slidecontainer">
+        Bandit 3 payout: <span id="bandit3val"></span>
+        <input type="range" min="1" max="100" value="50" class="slider" id="bandit3">
+    </div>
+    <div class="slidecontainer" style="width: 300px">
+        Epsilon: <span id="epsilonval"></span>
+        <input type="range" min="1" max="100" value="50" class="slider" id="epsilon">
+    </div>
+
+    <script src="processing.min.js"></script>
+    <script>
+        var bandit1slider = document.getElementById("bandit1");
+        var bandit2slider = document.getElementById("bandit2");
+        var bandit3slider = document.getElementById("bandit3");
+        var epsilonslider = document.getElementById("epsilon");
+
+        var out1 = document.getElementById("bandit1val");
+        var out2 = document.getElementById("bandit2val");
+        var out3 = document.getElementById("bandit3val");
+        var eps = document.getElementById("epsilonval");
+
+        var box1h = bandit1slider.value;
+        var box2h = bandit2slider.value;
+        var box3h = bandit3slider.value;
+        var epsval = epsilonslider.value;
+        var epsilon = epsval / 100.0;
+
+        out1.innerHTML = bandit1slider.value;
+        out2.innerHTML = bandit2slider.value;
+        out3.innerHTML = bandit3slider.value;
+        eps.innerHTML = epsilon;
+
+        bandit1slider.oninput = function () {
+            out1.innerHTML = this.value;
+            box1h = this.value;
+        }
+        bandit2slider.oninput = function () {
+            out2.innerHTML = this.value;
+            box2h = this.value;
+        }
+        bandit3slider.oninput = function () {
+            out3.innerHTML = this.value;
+            box3h = this.value;
+        }
+        epsilonslider.oninput = function() {
+            epsilon = this.value / 100.0;
+            eps.innerHTML = epsilon;
+        }
+
+        // number of times each bandit was pulled
+        var pulls1 = 1, pulls2 = 1, pulls3 = 1;
+        // total payout over time per bandit
+        var pay1 = 100, pay2 = 0, pay3 = 0;
+        // color per bandit
+        var color1 = 0, color2 = 0, color3 = 0;
+        // total number of pulls
+        var pulls = 1;
+
+        // choose best bandit, i.e. highest average payout
+        function best() {
+            console.log("best()");
+            avg1 = (pulls1 > 0 ? pay1 / pulls1 : 0.0);
+            avg2 = (pulls2 > 0 ? pay2 / pulls2 : 0.0);
+            avg3 = (pulls3 > 0 ? pay3 / pulls3 : 0.0);
+            // console.log("pulls1=" + pulls1 + " pulls2=" + pulls2 + " pulls3=" + pulls3);
+            // console.log("pay1=" + pay1 + " pay2=" + pay2 + " pay3=" + pay3);
+            console.log("avg1=" + avg1 + " avg2=" + avg2 + " avg3=" + avg3);
+            if (avg1 >= avg2) { 
+                // either 1 or 3 is greatest
+                return (avg1 > avg3 ? 1 : 3);
+            } else {
+                // either 2 or 3 is greatest
+                return (avg2 > avg3 ? 2 : 3);
+            }
+        }
+
+        // choose random bandit 1-3
+        function randombox() {
+            console.log("randombox()");
+            return 1 + (Math.floor(3 * Math.random()));
+        }
+
+        // experiment:
+        // decide wether to choose best or explore and choose random
+        // adjust the payouts. in this code win chance is 100% but the 
+        // payout differs per bandit.
+        function experiment() {
+            console.log("experiment()");
+            pulls++;
+            var chosen;
+            if (Math.random() < epsilon) {
+                // exploration
+                chosen = randombox();
+            } else {
+                // exploitation
+                chosen = best();
+                console.log("best is: " + chosen);
+            }
+
+            switch(chosen) {
+                case 1:
+                    pulls1++;
+                    pay1 = pay1 + parseInt(box1h);
+                    break;
+                case 2:
+                    pulls2++;
+                    pay2 += parseInt(box2h);
+                    break;
+                default:
+                    pulls3++;
+                    pay3 += parseInt(box3h);
+            }
+            setTimeout(experiment, 100);
+        }
+        experiment();
+    
+    </script>
+</body>
+</html>
