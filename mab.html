@@ -198,10 +198,15 @@
             return bestbandit + 1;
         }
 
-        // choose random bandit 1-3
+        // choose random bandit 1-3, be sure not to return "best"
         function randombox() {
             console.debug("randombox()");
-            return 1 + (Math.floor(3 * Math.random()));
+            var currentbest = betterbest();
+            var rndbox = 1 + (Math.floor(3 * Math.random()));
+            while (rndbox == currentbest) {
+                rndbox = 1 + (Math.floor(3 * Math.random()));
+            }
+            return rndbox;
         }
 
         // experiment:
